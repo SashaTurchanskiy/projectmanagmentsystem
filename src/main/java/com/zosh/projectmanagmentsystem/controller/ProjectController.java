@@ -1,8 +1,11 @@
 package com.zosh.projectmanagmentsystem.controller;
 
 import com.zosh.projectmanagmentsystem.modal.Chat;
+import com.zosh.projectmanagmentsystem.modal.Invitation;
 import com.zosh.projectmanagmentsystem.modal.Project;
+import com.zosh.projectmanagmentsystem.request.InvitationRequest;
 import com.zosh.projectmanagmentsystem.response.MessageResponse;
+import com.zosh.projectmanagmentsystem.service.invitation.InvitationService;
 import com.zosh.projectmanagmentsystem.service.project.ProjectService;
 import com.zosh.projectmanagmentsystem.service.user.UserService;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +22,7 @@ public class ProjectController {
 
     private final ProjectService projectService;
     private final UserService userService;
+    private final InvitationService invitationService;
 
     @GetMapping
     public ResponseEntity<List<Project>> getProjects(@RequestParam(required = false) String category,
@@ -72,5 +76,24 @@ public class ProjectController {
         var user = userService.findUserProfileByJwt(jwt);
         var chat = projectService.getChatByProjectId(projectId);
         return new ResponseEntity<>(chat, HttpStatus.OK);
+    }
+    @PostMapping("/invite")
+    public ResponseEntity<MessageResponse> inviteProject(@RequestBody InvitationRequest request,
+                                                         @RequestHeader("Authorization") String jwt,
+                                                         @RequestBody Project project) throws Exception {
+        var user = userService.findUserProfileByJwt(jwt);
+        invitationService.sendInvitation(request.getEmail(), request.getProjectId());
+        MessageResponse response = new MessageResponse("Invitation sent successfully");
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
+    @PostMapping("/accept_invitation")
+    public ResponseEntity<Invitation> acceptInvitation(@RequestParam String token,
+                                                       @RequestHeader("Authorization")String jwt,
+                                                       @RequestBody Project project) throws Exception {
+        var user = userService.findUserProfileByJwt(jwt);
+        var invitation = invitationService.acceptInvitation(token, user.getId());
+        projectService.addUserToProject(invitation.getProjectId(), user.getId());
+
+        return new ResponseEntity<>(invitation, HttpStatus.ACCEPTED);
     }
 }
