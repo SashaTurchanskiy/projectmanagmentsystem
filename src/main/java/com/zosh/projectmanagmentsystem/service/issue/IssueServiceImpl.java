@@ -41,7 +41,7 @@ public class IssueServiceImpl implements IssueService{
     }
 
     @Override
-    public Issue createIssue(IssueRequest request, Long userId) throws Exception {
+    public Issue createIssue(IssueRequest request, User user) throws Exception {
         Project project = projectService.getProjectById(request.getProjectId());
 
         Issue issue = new Issue();
